@@ -10,6 +10,8 @@ public class LinkService(
     TimeProvider timeProvider)
 {
     public const int MaxGenerationAttempts = 5;
+    public const int DefaultPageSize = 20;
+    public const int MaxPageSize = 100;
 
     private const string NotFoundMessage = "Link não encontrado.";
 
@@ -72,6 +74,24 @@ public class LinkService(
         return link is null
             ? LinkResult<LinkStats>.NotFound(NotFoundMessage)
             : LinkResult<LinkStats>.Ok(new LinkStats(link.Code, link.AccessCount));
+    }
+
+    // RF-11 e RN-14: todos os links, inclusive expirados, em páginas.
+    public async Task<LinkResult<LinkPage>> ListAsync(int? page, int? pageSize, CancellationToken cancellationToken)
+    {
+        var currentPage = page ?? 1;
+        var currentPageSize = pageSize ?? DefaultPageSize;
+
+        if (currentPage < 1)
+            return LinkResult<LinkPage>.Invalid("A página deve ser maior ou igual a 1.");
+
+        if (currentPageSize is < 1 or > MaxPageSize)
+            return LinkResult<LinkPage>.Invalid($"O tamanho da página deve ser de 1 a {MaxPageSize}.");
+
+        var (items, totalCount) = await repository.ListAsync(
+            (currentPage - 1) * currentPageSize, currentPageSize, cancellationToken);
+
+        return LinkResult<LinkPage>.Ok(new LinkPage(items, currentPage, currentPageSize, totalCount));
     }
 
     private async Task<LinkResult<Link>> CreateWithCustomCodeAsync(

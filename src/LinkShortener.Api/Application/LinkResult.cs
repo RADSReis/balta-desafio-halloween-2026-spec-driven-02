@@ -1,3 +1,5 @@
+using LinkShortener.Api.Domain;
+
 namespace LinkShortener.Api.Application;
 
 public enum LinkResultStatus
@@ -23,3 +25,5 @@ public sealed record LinkResult<T>(LinkResultStatus Status, T? Value = default, 
 public sealed record CreateLinkCommand(string? TargetUrl, string? Code, string? ExpiresAt);
 
 public sealed record LinkStats(string Code, long AccessCount);
+
+public sealed record LinkPage(IReadOnlyList<Link> Items, int Page, int PageSize, int TotalCount);

@@ -8,6 +8,9 @@ public interface ILinkRepository
     Task<Link?> FindByTargetUrlAsync(string targetUrl, CancellationToken cancellationToken);
     Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken);
 
+    // Do mais recente para o mais antigo, junto com o total geral.
+    Task<(IReadOnlyList<Link> Items, int TotalCount)> ListAsync(int skip, int take, CancellationToken cancellationToken);
+
     // Devolve false quando o índice único do código recusa a inserção (D-04).
     Task<bool> TryAddAsync(Link link, CancellationToken cancellationToken);
     Task UpdateAsync(Link link, CancellationToken cancellationToken);

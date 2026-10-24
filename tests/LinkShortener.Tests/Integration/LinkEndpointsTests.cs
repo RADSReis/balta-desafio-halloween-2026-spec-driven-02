@@ -256,4 +256,49 @@ public class LinkEndpointsTests : IDisposable
         Assert.Equal("https://exemplo.com/persistido", response.Headers.Location!.OriginalString);
     }
 
+    private sealed record ListItem(string Code, string ShortUrl, string TargetUrl, DateTime ExpiresAtUtc, long AccessCount);
+
+    private sealed record ListResponse(List<ListItem> Items, int Page, int PageSize, int TotalCount);
+
+    [Fact]
+    public async Task List_ReturnsAllLinksIncludingExpired()
+    {
+        var first = await CreateLinkAsync("https://exemplo.com/1", "PRIMEIRO");
+        await _client.GetAsync($"/{first.Code}");
+        _factory.Time.UtcNow = ApiFactory.StartTime.AddMinutes(1);
+        await CreateLinkAsync("https://exemplo.com/2", "SEGUNDO");
+        _factory.Time.UtcNow = ApiFactory.StartTime.AddDays(10);
+
+        var response = await _client.GetFromJsonAsync<ListResponse>("/api/links");
+
+        Assert.Equal(2, response!.TotalCount);
+        Assert.Equal(["SEGUNDO", "PRIMEIRO"], response.Items.Select(i => i.Code));
+        Assert.Equal(
+            new ListItem("PRIMEIRO", "http://localhost/PRIMEIRO", "https://exemplo.com/1", new DateTime(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc), 1),
+            response.Items[1]);
+    }
+
+    [Fact]
+    public async Task List_WithPaging_ReturnsRequestedPage()
+    {
+        await CreateLinkAsync("https://exemplo.com/1", "PRIMEIRO");
+        _factory.Time.UtcNow = ApiFactory.StartTime.AddMinutes(1);
+        await CreateLinkAsync("https://exemplo.com/2", "SEGUNDO");
+
+        var response = await _client.GetFromJsonAsync<ListResponse>("/api/links?page=2&pageSize=1");
+
+        Assert.Equal((2, 1, 2), (response!.Page, response.PageSize, response.TotalCount));
+        Assert.Equal("PRIMEIRO", response.Items.Single().Code);
+    }
+
+    [Theory]
+    [InlineData("?page=0")]
+    [InlineData("?pageSize=101")]
+    public async Task List_InvalidPaging_Returns400ProblemDetails(string query)
+    {
+        var response = await _client.GetAsync($"/api/links{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+    }
 }

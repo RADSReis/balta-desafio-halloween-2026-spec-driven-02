@@ -8,9 +8,14 @@ public static class LinkEndpoints
 
     public sealed record CreateLinkResponse(string ShortUrl, string Code, DateTime ExpiresAtUtc);
 
+    public sealed record LinkItemResponse(string Code, string ShortUrl, string TargetUrl, DateTime ExpiresAtUtc, long AccessCount);
+
+    public sealed record LinkListResponse(IReadOnlyList<LinkItemResponse> Items, int Page, int PageSize, int TotalCount);
+
     public static IEndpointRouteBuilder MapLinkEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/api/links", CreateAsync);
+        app.MapGet("/api/links", ListAsync);
         app.MapGet("/api/links/{code}/stats", GetStatsAsync);
         app.MapMethods("/{code}", [HttpMethods.Get, HttpMethods.Head], RedirectAsync);
 
@@ -44,6 +49,21 @@ public static class LinkEndpoints
         return result.Value is { } targetUrl
             ? Results.Redirect(targetUrl, permanent: false)
             : Problem(result);
+    }
+
+    private static async Task<IResult> ListAsync(
+        int? page, int? pageSize, LinkService service, HttpContext context, CancellationToken cancellationToken)
+    {
+        var result = await service.ListAsync(page, pageSize, cancellationToken);
+
+        if (result.Value is not { } linkPage)
+            return Problem(result);
+
+        var items = linkPage.Items
+            .Select(l => new LinkItemResponse(l.Code, ShortUrl(context, l.Code), l.TargetUrl, l.ExpiresAtUtc, l.AccessCount))
+            .ToList();
+
+        return Results.Ok(new LinkListResponse(items, linkPage.Page, linkPage.PageSize, linkPage.TotalCount));
     }
 
     private static async Task<IResult> GetStatsAsync(string code, LinkService service, CancellationToken cancellationToken)

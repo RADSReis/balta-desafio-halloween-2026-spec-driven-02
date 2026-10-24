@@ -231,4 +231,46 @@ public class LinkServiceTests
         Assert.Equal(LinkResultStatus.NotFound, result.Status);
     }
 
+    [Fact]
+    public async Task ListAsync_ReturnsAllLinksNewestFirstIncludingExpired()
+    {
+        var service = CreateService();
+        await service.CreateAsync(new("https://exemplo.com/1", "PRIMEIRO", Tomorrow), default);
+        _time.UtcNow = Now.AddHours(1);
+        await service.CreateAsync(new("https://exemplo.com/2", "SEGUNDO", Tomorrow), default);
+        _time.UtcNow = Now.AddDays(5);
+
+        var result = await service.ListAsync(null, null, default);
+
+        Assert.Equal(LinkResultStatus.Ok, result.Status);
+        Assert.Equal(["SEGUNDO", "PRIMEIRO"], result.Value!.Items.Select(l => l.Code));
+        Assert.Equal((1, LinkService.DefaultPageSize, 2), (result.Value.Page, result.Value.PageSize, result.Value.TotalCount));
+    }
+
+    [Fact]
+    public async Task ListAsync_PagesResults()
+    {
+        var service = CreateService();
+        for (var i = 1; i <= 3; i++)
+        {
+            _time.UtcNow = Now.AddMinutes(i);
+            await service.CreateAsync(new($"https://exemplo.com/{i}", $"LINK{i}", Tomorrow), default);
+        }
+
+        var result = await service.ListAsync(2, 2, default);
+
+        Assert.Equal(["LINK1"], result.Value!.Items.Select(l => l.Code));
+        Assert.Equal(3, result.Value.TotalCount);
+    }
+
+    [Theory]
+    [InlineData(0, 20)]
+    [InlineData(1, 0)]
+    [InlineData(1, 101)]
+    public async Task ListAsync_InvalidPaging_IsInvalid(int page, int pageSize)
+    {
+        var result = await CreateService().ListAsync(page, pageSize, default);
+
+        Assert.Equal(LinkResultStatus.Invalid, result.Status);
+    }
 }

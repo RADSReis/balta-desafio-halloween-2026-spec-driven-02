@@ -18,6 +18,20 @@ public class LinkRepository(AppDbContext context) : ILinkRepository
     public Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken) =>
         context.Links.AnyAsync(l => l.Code == code, cancellationToken);
 
+    public async Task<(IReadOnlyList<Link> Items, int TotalCount)> ListAsync(int skip, int take, CancellationToken cancellationToken)
+    {
+        var totalCount = await context.Links.CountAsync(cancellationToken);
+        var items = await context.Links
+            .AsNoTracking()
+            .OrderByDescending(l => l.CreatedAtUtc)
+            .ThenByDescending(l => l.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task<bool> TryAddAsync(Link link, CancellationToken cancellationToken)
     {
         context.Links.Add(link);

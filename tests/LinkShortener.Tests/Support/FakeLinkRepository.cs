@@ -32,6 +32,18 @@ public class FakeLinkRepository : ILinkRepository
     public Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken) =>
         Task.FromResult(_links.Any(l => l.Code == code));
 
+    public Task<(IReadOnlyList<Link> Items, int TotalCount)> ListAsync(int skip, int take, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Link> items = _links
+            .OrderByDescending(l => l.CreatedAtUtc)
+            .ThenByDescending(l => l.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToList();
+
+        return Task.FromResult((items, _links.Count));
+    }
+
     public Task<bool> TryAddAsync(Link link, CancellationToken cancellationToken)
     {
         if (_links.Any(l => l.Code == link.Code))
