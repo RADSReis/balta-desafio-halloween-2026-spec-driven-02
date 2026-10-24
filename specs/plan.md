@@ -20,6 +20,10 @@ do projeto.
 - D-04: unicidade do código garantida por índice único no banco, além da
   checagem no serviço, porque a checagem sozinha tem corrida
 - D-05: chave de gerenciamento da DC-03 armazenada como hash, nunca em texto puro
+- D-06: documentação da API com Swagger, para explorar e testar os endpoints
+  manualmente; o documento OpenAPI é gerado pelo pacote oficial
+  Microsoft.AspNetCore.OpenApi e exibido pelo Swashbuckle.AspNetCore.SwaggerUI;
+  ambos ficam habilitados apenas no ambiente de desenvolvimento
 
 ## Modelo de dados
 Link
