@@ -46,6 +46,9 @@ esse link e acompanhe quantos acessos intencionais ele recebeu.
   outro: substitui a expiração do link existente pela expiração da requisição,
   ignora um eventual código personalizado e devolve a mesma URL curta; isso vale
   também para link já expirado, que volta a ser válido
+- RF-11: o sistema lista todos os links, com código, URL curta, URL de destino,
+  expiração e total de acessos, inclusive expirados, em páginas ordenadas do
+  mais recente para o mais antigo
 
 ## Regras de negócio
 - RN-01: o código do link é único em todo o sistema; o código de um link expirado
@@ -74,6 +77,8 @@ esse link e acompanhe quantos acessos intencionais ele recebeu.
   espaços do início e do fim, esquema e host em minúsculas, remover a porta
   padrão (80 para http, 443 para https) e remover a `/` final quando o caminho
   for só `/`; caminho, query e fragmento são mantidos como vieram
+- RN-14: a listagem usa página a partir de 1 e tamanho de página de 1 a 100,
+  com padrão de página 1 e tamanho 20
 
 ## Requisitos não funcionais
 - RNF-01: o incremento do contador é atômico, para que acessos simultâneos não
@@ -135,4 +140,6 @@ Todos os erros retornam ProblemDetails com mensagem em português.
 - Acessos simultâneos ao mesmo link incrementam o contador sem perda
 - Qualquer pessoa que conheça o código pode consultar o total de acessos,
   inclusive de link expirado
+- A listagem devolve todos os links, inclusive expirados, com o total geral, e
+  recusa com 400 página menor que 1 ou tamanho fora de 1 a 100
 - Após reiniciar a aplicação, os links persistidos no banco continuam funcionando

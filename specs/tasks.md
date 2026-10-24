@@ -12,3 +12,4 @@
 | T-08 | Incrementar contador de forma atômica | RF-05, RN-12, RNF-01, D-02 | T-07 | Teste concorrente não perde contagem |
 | T-09 | Endpoint de estatísticas | RF-07, D-05 | T-05 | Teste de integração devolve o total, inclusive de link expirado |
 | T-10 | Cache em memória dos links mais acessados | D-08 | T-07 | Teste unitário mostra que o segundo redirect não consulta o banco |
+| T-11 | Listar links com paginação | RF-11, RN-14 | T-05 | Teste de integração lista links, inclusive expirado, e página inválida retorna 400 |

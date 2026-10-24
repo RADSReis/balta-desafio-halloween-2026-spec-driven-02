@@ -49,9 +49,13 @@ Link
 - GET /{code} (e HEAD) redireciona com 302, ou 404 se não existe, ou 410 se
   expirou
 - GET /api/links/{code}/stats devolve code e accessCount, ou 404 se não existe
+- GET /api/links?page=&pageSize= devolve items (code, shortUrl, targetUrl,
+  expiresAtUtc, accessCount), page, pageSize e totalCount
 
 ## Riscos
 - Concorrência na criação de código próprio, mitigada por D-04
 - Duas criações simultâneas da mesma URL podem gerar dois links, porque a
   TargetUrl não tem índice único
+- A listagem é pública, como as estatísticas: quem chama vê todos os códigos e
+  destinos, já que cadastro e login estão fora de escopo
 - Crescimento da tabela de links sem política de limpeza, fora de escopo por ora
